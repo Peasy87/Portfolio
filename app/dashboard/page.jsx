@@ -9,7 +9,7 @@ import React, { useState, useEffect, useRef } from 'react';
 // In your real deploy, replace MOCK_MODE with Pusher subscription (see bottom).
 // ============================================================================
 
-const MOCK_MODE = true; // flip to false when Pusher is wired up
+const MOCK_MODE = false;
 
 // -- Mock event stream for local preview ------------------------------------
 const MOCK_LEAD = {
@@ -105,8 +105,6 @@ export default function Dashboard() {
   };
 
   // -- PUSHER subscription (production) -----------------------------------
-  // Uncomment + npm install pusher-js, set NEXT_PUBLIC_PUSHER_KEY in env.
-  /*
   useEffect(() => {
     if (MOCK_MODE) return;
     import('pusher-js').then(({ default: Pusher }) => {
@@ -118,7 +116,6 @@ export default function Dashboard() {
       return () => pusher.disconnect();
     });
   }, []);
-  */
 
   return (
     <div style={S.shell}>
