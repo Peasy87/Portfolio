@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 80">
+  
+  <circle class="pa-dot" cx="14" cy="40" r="6"></circle>
+  <text class="pa-mark" x="30" y="52">Prentice Alston</text>
+</svg>
