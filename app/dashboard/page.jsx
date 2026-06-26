@@ -108,7 +108,7 @@ export default function Dashboard() {
   useEffect(() => {
     if (MOCK_MODE) return;
     import('pusher-js').then(({ default: Pusher }) => {
-      const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY, {
+      const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY || 'd59f2c2afd865ddb321a', {
         cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || 'us2',
       });
       const channel = pusher.subscribe('lead-pipeline');
