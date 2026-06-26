@@ -108,11 +108,18 @@ export default function Dashboard() {
   // -- PUSHER subscription (production) -----------------------------------
   useEffect(() => {
     if (MOCK_MODE) return;
+    console.log('[Pusher] connecting...');
     const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY || 'd59f2c2afd865ddb321a', {
       cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || 'us2',
     });
+    pusher.connection.bind('connected', () => console.log('[Pusher] connected ✓'));
+    pusher.connection.bind('error', (e) => console.error('[Pusher] connection error', e));
     const channel = pusher.subscribe('lead-pipeline');
-    STAGES.forEach((s) => channel.bind(s.key, (data) => handleEvent({ type: s.key, payload: data })));
+    channel.bind('pusher:subscription_succeeded', () => console.log('[Pusher] subscribed to lead-pipeline ✓'));
+    STAGES.forEach((s) => channel.bind(s.key, (data) => {
+      console.log('[Pusher] event received:', s.key, data);
+      handleEvent({ type: s.key, payload: data });
+    }));
     return () => pusher.disconnect();
   }, [handleEvent]);
 
