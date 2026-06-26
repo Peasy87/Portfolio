@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import Pusher from 'pusher-js';
 
 // ============================================================================
 // LIVE WORKFLOW DASHBOARD — Lead Intake Pipeline
@@ -65,7 +66,7 @@ export default function Dashboard() {
   }, [events]);
 
   // Event handler — called by either mock or Pusher
-  const handleEvent = (evt) => {
+  const handleEvent = useCallback((evt) => {
     const stamped = { ...evt, ts: new Date() };
     setEvents((e) => [...e, stamped]);
     setStageStatus((s) => ({ ...s, [evt.type]: 'done' }));
@@ -88,7 +89,7 @@ export default function Dashboard() {
     if (evt.type === 'record_created') {
       setCurrentLead((l) => l && { ...l, airtable_id: evt.payload.airtable_id });
     }
-  };
+  }, []);
 
   // -- MOCK trigger (for local preview) -----------------------------------
   const triggerMock = (source) => {
@@ -107,15 +108,13 @@ export default function Dashboard() {
   // -- PUSHER subscription (production) -----------------------------------
   useEffect(() => {
     if (MOCK_MODE) return;
-    import('pusher-js').then(({ default: Pusher }) => {
-      const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY || 'd59f2c2afd865ddb321a', {
-        cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || 'us2',
-      });
-      const channel = pusher.subscribe('lead-pipeline');
-      STAGES.forEach((s) => channel.bind(s.key, (data) => handleEvent({ type: s.key, payload: data })));
-      return () => pusher.disconnect();
+    const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY || 'd59f2c2afd865ddb321a', {
+      cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || 'us2',
     });
-  }, []);
+    const channel = pusher.subscribe('lead-pipeline');
+    STAGES.forEach((s) => channel.bind(s.key, (data) => handleEvent({ type: s.key, payload: data })));
+    return () => pusher.disconnect();
+  }, [handleEvent]);
 
   return (
     <div style={S.shell}>
