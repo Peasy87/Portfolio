@@ -109,9 +109,7 @@ export default function Dashboard() {
   useEffect(() => {
     if (MOCK_MODE) return;
     console.log('[Pusher] connecting...');
-    const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY || 'd59f2c2afd865ddb321a', {
-      cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || 'us2',
-    });
+    const pusher = new Pusher('d59f2c2afd865ddb321a', { cluster: 'us2' });
     pusher.connection.bind('connected', () => console.log('[Pusher] connected ✓'));
     pusher.connection.bind('error', (e) => console.error('[Pusher] connection error', e));
     const channel = pusher.subscribe('lead-pipeline');
