@@ -139,7 +139,7 @@ export default function Dashboard() {
           <Stat label="HOT" value={stats.hot} tone="hot" />
           <Stat label="COLD" value={stats.cold} tone="cold" />
           <div style={S.clock}>
-            {now ? now.toISOString().replace('T', ' ').slice(0, 19) + ' UTC' : '--- -- --:--:-- UTC'}
+            {now ? new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Chicago', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).format(now).replace(',', '') + ' CST' : '--- -- --:--:-- CST'}
             <div style={S.pulse}><span style={S.pulseDot} />LIVE</div>
           </div>
         </div>
@@ -254,7 +254,7 @@ function TierBadge({ tier }) {
 }
 
 function EventLine({ event }) {
-  const time = event.ts.toISOString().slice(11, 23);
+  const time = event.ts.toLocaleTimeString('en-US', { timeZone: 'America/Chicago', hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }) + '.' + String(event.ts.getMilliseconds()).padStart(3, '0');
   return (
     <div style={S.evt}>
       <span style={S.evtTime}>{time}</span>
