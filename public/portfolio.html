@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -174,10 +174,22 @@
   }
   @media (max-width: 900px) {
     .hero-fixed {
+      position: relative;
+      inset: auto;
+      height: auto;
+      min-height: 100svh;
       grid-template-columns: 1fr;
-      gap: 32px;
-      padding: 100px var(--gutter) 40px;
+      gap: 36px;
+      padding: 110px var(--gutter) 64px;
+      /* never let the parallax JS hide it on mobile */
+      opacity: 1 !important;
+      transform: none !important;
+      clip-path: none !important;
     }
+    .hero-right { display: flex; justify-content: center; }
+    .photo-frame { max-width: 360px; }
+    .spacer { display: none; }
+    .scroll-cue { display: none; }
   }
 
   .hero-left { z-index: 2; }
@@ -1728,7 +1740,7 @@
             </div>
             <h3>AI front desk for ESL programs</h3>
             <p>Watch a prospective student get qualified, scheduled, and routed to the right program — in a few targeted question / messages.</p>
-            <a href="/dashboard" class="demo-cta">Try the demo →</a>
+            <a href="demos/Lead Pipeline.html" class="demo-cta">Try the demo →</a>
           </div>
         </div>
 
@@ -1776,7 +1788,7 @@
             </div>
             <h3>The ROI dashboard owners actually open</h3>
             <p>Real-time spend, leads, and revenue from every ad platform — joined to your CRM, broken down by program.</p>
-            <a href="/dashboard" class="demo-cta">Try the demo →</a>
+            <a href="demos/Lead Pipeline.html" class="demo-cta">Try the demo →</a>
           </div>
         </div>
 
@@ -1827,7 +1839,7 @@
             </div>
             <h3>Every prospect, every stage, no spreadsheet</h3>
             <p>Traceable student and family information across multiple programs through job placement.  Shows real impact to donors and employers.</p>
-            <a href="/dashboard" class="demo-cta">Try the demo →</a>
+            <a href="demos/Lead Pipeline.html" class="demo-cta">Try the demo →</a>
           </div>
         </div>
 
@@ -1867,7 +1879,7 @@
             </div>
             <h3>Bilingual voice agent that books tours</h3>
             <p>Picks up at 10:42pm, answers in English or Spanish, qualifies on the call, and books straight into your calendar.</p>
-            <a href="/dashboard" class="demo-cta">Try the demo →</a>
+            <a href="demos/Lead Pipeline.html" class="demo-cta">Try the demo →</a>
           </div>
         </div>
 
@@ -2023,7 +2035,7 @@
     <div class="cta-meta">
       <div>
         <div class="label">Email</div>
-        <div class="value">warwickden17@gmail.com</div>
+        <div class="value"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="d7a0b6a5a0beb4bcb3b2b9e6e097b0bab6bebbf9b4b8ba">[email&#160;protected]</a></div>
       </div>
       <div>
         <div class="label">Phone</div>
@@ -2047,12 +2059,21 @@
 
 <!-- ============ SCRIPTS ============ -->
 
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 /* ========== HERO PARALLAX FADE ========== */
 (function() {
   const hero = document.getElementById('hero');
   let ticking = false;
+  const mq = window.matchMedia('(max-width: 900px)');
   function update() {
+    ticking = false;
+    if (mq.matches) {
+      // Mobile: hero scrolls in normal flow — clear any parallax styles
+      hero.style.opacity = '';
+      hero.style.transform = '';
+      hero.style.clipPath = '';
+      return;
+    }
     const sc = window.scrollY;
     const vh = window.innerHeight;
     // 0 -> 1 over first viewport
@@ -2064,9 +2085,12 @@
     hero.style.opacity = Math.max(0, opacity);
     hero.style.transform = `scale(${scale})`;
     hero.style.clipPath = `inset(${inset}% ${inset * 1.5}% ${inset}% ${inset * 1.5}% round ${t * 24}px)`;
-    ticking = false;
   }
   window.addEventListener('scroll', () => {
+    if (!ticking) { requestAnimationFrame(update); ticking = true; }
+  }, { passive: true });
+  mq.addEventListener('change', update);
+  window.addEventListener('resize', () => {
     if (!ticking) { requestAnimationFrame(update); ticking = true; }
   }, { passive: true });
   update();
@@ -2332,4 +2356,3 @@ root.render(<PortfolioTweaks />);
 
 </body>
 </html>
-
