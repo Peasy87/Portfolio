@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Live Demo — Enrollment Pipeline</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600&family=Geist:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" />
+<style>
+  /* ===== Prentice Alston brand tokens (dark) ===== */
+  :root {
+    --bg:        #050d18;
+    --surface:   #0b1a2c;
+    --surface2:  #0f2236;
+    --line:      rgba(243, 237, 226, 0.12);
+    --line2:     rgba(243, 237, 226, 0.22);
+    --ink:       #f3ede2;
+    --ink-soft:  #c8d3df;
+    --dim:       #7a8a9c;
+    --dimmer:    rgba(243, 237, 226, 0.30);
+    --teal:      #4cc4be;
+    --teal-soft: #6fd9d3;
+    --green:     #8fc499;
+    --hot:       #d97757;
+    --cold:      #5b9bff;
+
+    --serif: 'Fraunces', Georgia, serif;
+    --sans:  'Geist', system-ui, sans-serif;
+    --mono:  'JetBrains Mono', ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); }
+  #root { min-height: 100vh; }
+
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+  @keyframes slideIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes flow { 0% { background-position: 0% 0; } 100% { background-position: 200% 0; } }
+</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="backLinkWrap"><a href="../portfolio.html#demos" id="backLink">← Back to portfolio</a></div>
+<div id="root"></div>
+
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useRef } = React;
+
+// ============================================================================
+// LIVE ENROLLMENT PIPELINE — Lead Intake (Prentice Alston demo)
+// twilio → n8n → llm-score → airtable, streamed over a pusher channel.
+// ============================================================================
+
+const MOCK_SEQUENCE = [
+  { t: 0,    type: 'lead_received',     payload: { source: 'qr-flyer', channel: 'sms', phone: '+1 (312) 555-0142', campaign: 'fall-enrollment-2026' } },
+  { t: 900,  type: 'transcription_done', payload: { text: 'Hi I saw the flyer at the cafe — interested in the spring cohort for the data analytics program. My name is Jordan Reyes.' } },
+  { t: 2200, type: 'fields_extracted',  payload: { name: 'Jordan Reyes', interest: 'Data Analytics', cohort: 'Spring', email: null } },
+  { t: 3400, type: 'scored',            payload: { score: 87, tier: 'HOT', reasoning: 'Named program, specified cohort, scanned physical flyer (high intent signal)' } },
+  { t: 4600, type: 'record_created',    payload: { airtable_id: 'recXk93jJqL2', url: 'https://airtable.com/...' } },
+];
+
+const STAGES = [
+  { key: 'lead_received',      label: 'Intake',     num: '01' },
+  { key: 'transcription_done', label: 'Transcribe', num: '02' },
+  { key: 'fields_extracted',   label: 'Extract',    num: '03' },
+  { key: 'scored',             label: 'Score',      num: '04' },
+  { key: 'record_created',     label: 'Persist',    num: '05' },
+];
+
+const SOURCE_META = {
+  'qr-flyer': { label: 'QR FLYER', glyph: '▦' },
+  'ppc':      { label: 'PPC AD',   glyph: '◈' },
+  'webform':  { label: 'WEB FORM', glyph: '◫' },
+  'phone':    { label: 'INBOUND',  glyph: '◉' },
+};
+
+function Dashboard() {
+  const [events, setEvents] = useState([]);
+  const [currentLead, setCurrentLead] = useState(null);
+  const [stageStatus, setStageStatus] = useState({});
+  const [stats, setStats] = useState({ total: 0, hot: 0, cold: 0 });
+  const [now, setNow] = useState(new Date());
+  const feedRef = useRef(null);
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  useEffect(() => {
+    if (feedRef.current) feedRef.current.scrollTop = feedRef.current.scrollHeight;
+  }, [events]);
+
+  const handleEvent = (evt) => {
+    const stamped = { ...evt, ts: new Date() };
+    setEvents((e) => [...e, stamped]);
+    setStageStatus((s) => ({ ...s, [evt.type]: 'done' }));
+
+    if (evt.type === 'lead_received') {
+      setCurrentLead({ ...evt.payload, id: 'lead_' + Math.random().toString(36).slice(2, 8) });
+      setStageStatus({ lead_received: 'done' });
+    }
+    if (evt.type === 'scored') {
+      setStats((s) => ({
+        total: s.total + 1,
+        hot: s.hot + (evt.payload.tier === 'HOT' ? 1 : 0),
+        cold: s.cold + (evt.payload.tier !== 'HOT' ? 1 : 0),
+      }));
+      setCurrentLead((l) => l && { ...l, score: evt.payload.score, tier: evt.payload.tier, reasoning: evt.payload.reasoning });
+    }
+    if (evt.type === 'fields_extracted') {
+      setCurrentLead((l) => l && { ...l, ...evt.payload });
+    }
+    if (evt.type === 'record_created') {
+      setCurrentLead((l) => l && { ...l, airtable_id: evt.payload.airtable_id });
+    }
+  };
+
+  const triggerMock = (source) => {
+    setEvents([]);
+    setStageStatus({});
+    const seq = MOCK_SEQUENCE.map((e) =>
+      e.type === 'lead_received' ? { ...e, payload: { ...e.payload, source } } : e
+    );
+    seq.forEach((e) => setTimeout(() => handleEvent(e), e.t));
+  };
+
+  return (
+    <div style={S.shell}>
+      {/* Header */}
+      <header style={S.header}>
+        <div style={S.brand}>
+          <div style={S.brandDot} />
+          <div>
+            <div style={S.brandName}>Live Demo<em style={S.brandEm}> — Clients</em></div>
+            <div style={S.brandSub}>Enrollment pipeline · real-time</div>
+          </div>
+        </div>
+        <div style={S.headerRight}>
+          <Stat label="TOTAL" value={stats.total} />
+          <Stat label="HOT" value={stats.hot} tone="hot" />
+          <Stat label="COLD" value={stats.cold} tone="cold" />
+          <div style={S.clock}>
+            {now.toLocaleString('sv-SE', { timeZone: 'America/Chicago' })} CST
+            <div style={S.pulse}><span style={S.pulseDot} />LIVE</div>
+          </div>
+        </div>
+      </header>
+
+      {/* Trigger row */}
+      <section style={S.triggerRow}>
+        <div style={S.triggerLabel}>
+          <span style={S.kicker}>// SIMULATE</span>
+          <span style={S.triggerHelp}>fire a test inquiry through the production pipeline</span>
+        </div>
+        <div style={S.triggerBtns}>
+          {Object.entries(SOURCE_META).map(([k, v]) => (
+            <button key={k} style={S.triggerBtn} onClick={() => triggerMock(k)}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--teal)'; e.currentTarget.style.background = 'var(--surface2)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--line2)'; e.currentTarget.style.background = 'var(--surface)'; }}>
+              <span style={S.btnGlyph}>{v.glyph}</span>
+              <span>{v.label}</span>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {/* Pipeline */}
+      <section style={S.pipeline}>
+        {STAGES.map((stage, i) => (
+          <React.Fragment key={stage.key}>
+            <StageBlock stage={stage} status={stageStatus[stage.key]} />
+            {i < STAGES.length - 1 && (
+              <div style={{ ...S.connector, ...(stageStatus[STAGES[i + 1].key] ? S.connectorActive : {}) }} />
+            )}
+          </React.Fragment>
+        ))}
+      </section>
+
+      {/* Feed + record */}
+      <section style={S.grid}>
+        <div style={S.panel}>
+          <div style={S.panelHead}>
+            <span style={S.kicker}>// EVENT FEED</span>
+            <span style={S.panelCount}>{events.length} events</span>
+          </div>
+          <div ref={feedRef} style={S.feed}>
+            {events.length === 0 && (
+              <div style={S.feedEmpty}>
+                <div style={S.feedEmptyGlyph}>⌁</div>
+                <div>waiting for inbound inquiry…</div>
+                <div style={S.feedEmptyHint}>text or call the Twilio number, or fire a simulation above</div>
+              </div>
+            )}
+            {events.map((e, i) => <EventLine key={i} event={e} />)}
+          </div>
+        </div>
+
+        <div style={S.panel}>
+          <div style={S.panelHead}>
+            <span style={S.kicker}>// CURRENT RECORD</span>
+            {currentLead?.tier && <TierBadge tier={currentLead.tier} />}
+          </div>
+          <div style={S.record}>
+            {!currentLead && (
+              <div style={S.feedEmpty}>
+                <div style={S.feedEmptyGlyph}>◌</div>
+                <div>no active lead</div>
+              </div>
+            )}
+            {currentLead && <RecordCard lead={currentLead} />}
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer style={S.footer}>
+        <span>twilio → n8n → llm-score → airtable</span>
+        <span>pusher channel: lead-pipeline</span>
+      </footer>
+    </div>
+  );
+}
+
+function Stat({ label, value, tone }) {
+  return (
+    <div style={S.stat}>
+      <div style={S.statLabel}>{label}</div>
+      <div style={{ ...S.statVal, ...(tone === 'hot' ? { color: 'var(--hot)' } : tone === 'cold' ? { color: 'var(--cold)' } : {}) }}>
+        {String(value).padStart(3, '0')}
+      </div>
+    </div>
+  );
+}
+
+function StageBlock({ stage, status }) {
+  const active = status === 'done';
+  return (
+    <div style={{ ...S.stage, ...(active ? S.stageActive : {}) }}>
+      <div style={S.stageNum}>{stage.num}</div>
+      <div style={S.stageLabel}>{stage.label}</div>
+      <div style={{ ...S.stageDot, ...(active ? S.stageDotActive : {}) }} />
+    </div>
+  );
+}
+
+function TierBadge({ tier }) {
+  const hot = tier === 'HOT';
+  return (
+    <span style={{ ...S.tier, ...(hot ? S.tierHot : S.tierCold) }}>
+      {hot ? '●' : '○'} {tier}
+    </span>
+  );
+}
+
+function EventLine({ event }) {
+  const time = event.ts.toLocaleTimeString('en-GB', { timeZone: 'America/Chicago', hour12: false }) +
+    '.' + String(event.ts.getMilliseconds()).padStart(3, '0');
+  return (
+    <div style={S.evt}>
+      <span style={S.evtTime}>{time}</span>
+      <span style={S.evtType}>{event.type}</span>
+      <span style={S.evtPayload}>{formatPayload(event.payload)}</span>
+    </div>
+  );
+}
+
+function formatPayload(p) {
+  if (!p) return '';
+  return Object.entries(p)
+    .filter(([, v]) => v !== null && v !== undefined && v !== '')
+    .map(([k, v]) => `${k}=${typeof v === 'string' && v.length > 40 ? v.slice(0, 40) + '…' : v}`)
+    .join('  ');
+}
+
+function RecordCard({ lead }) {
+  const fields = [
+    ['Lead ID', lead.id],
+    ['Source', SOURCE_META[lead.source]?.label || lead.source],
+    ['Channel', lead.channel],
+    ['Phone', lead.phone],
+    ['Name', lead.name],
+    ['Interest', lead.interest],
+    ['Cohort', lead.cohort],
+    ['Airtable', lead.airtable_id],
+  ].filter(([, v]) => v);
+
+  return (
+    <div>
+      <div style={S.recScore}>
+        {lead.score !== undefined && (
+          <React.Fragment>
+            <div style={S.recScoreNum}>{lead.score}</div>
+            <div style={S.recScoreLabel}>LEAD SCORE / 100</div>
+          </React.Fragment>
+        )}
+      </div>
+      <div style={S.recFields}>
+        {fields.map(([k, v]) => (
+          <div key={k} style={S.recRow}>
+            <span style={S.recKey}>{k}</span>
+            <span style={S.recVal}>{v}</span>
+          </div>
+        ))}
+      </div>
+      {lead.reasoning && (
+        <div style={S.recReason}>
+          <div style={S.kicker}>// MODEL REASONING</div>
+          <div style={S.recReasonText}>{lead.reasoning}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ===== Styles (brand-tokenized) =====
+const S = {
+  shell: {
+    minHeight: '100vh',
+    background: 'var(--bg)',
+    color: 'var(--ink)',
+    fontFamily: 'var(--mono)',
+    fontSize: 13,
+    padding: '20px 24px 28px',
+    maxWidth: 1320,
+    margin: '0 auto',
+    backgroundImage: `
+      radial-gradient(circle at 18% -5%, rgba(76, 196, 190, 0.06) 0%, transparent 42%),
+      radial-gradient(circle at 85% 105%, rgba(91, 155, 255, 0.05) 0%, transparent 42%)`,
+  },
+  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 20, paddingBottom: 20, borderBottom: '1px solid var(--line)' },
+  brand: { display: 'flex', alignItems: 'center', gap: 14 },
+  brandDot: { width: 11, height: 11, borderRadius: '50%', background: 'var(--teal)', boxShadow: '0 0 0 4px rgba(76,196,190,0.18)', animation: 'pulse 2.4s ease-in-out infinite' },
+  brandName: { fontFamily: 'var(--serif)', fontSize: 26, fontWeight: 400, letterSpacing: '-0.02em', lineHeight: 1 },
+  brandEm: { fontStyle: 'italic', color: 'var(--teal)', fontWeight: 400 },
+  brandSub: { fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--dim)', textTransform: 'uppercase', letterSpacing: '0.14em', marginTop: 5 },
+  headerRight: { display: 'flex', gap: 30, alignItems: 'flex-end' },
+  stat: { textAlign: 'right' },
+  statLabel: { fontSize: 10, color: 'var(--dim)', letterSpacing: '0.15em' },
+  statVal: { fontFamily: 'var(--serif)', fontSize: 30, fontWeight: 400, lineHeight: 1, marginTop: 2 },
+  clock: { fontSize: 11, color: 'var(--dim)', textAlign: 'right' },
+  pulse: { display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 6, marginTop: 4, fontSize: 10, color: 'var(--teal)', letterSpacing: '0.15em' },
+  pulseDot: { width: 6, height: 6, borderRadius: '50%', background: 'var(--teal)', animation: 'pulse 1.5s infinite' },
+
+  triggerRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', padding: '24px 0', gap: 20 },
+  triggerLabel: { display: 'flex', flexDirection: 'column', gap: 5 },
+  kicker: { fontSize: 10, color: 'var(--teal)', letterSpacing: '0.2em', fontWeight: 500 },
+  triggerHelp: { fontSize: 12, color: 'var(--dim)' },
+  triggerBtns: { display: 'flex', gap: 8, flexWrap: 'wrap' },
+  triggerBtn: { background: 'var(--surface)', border: '1px solid var(--line2)', color: 'var(--ink)', padding: '10px 16px', fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '0.1em', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, transition: 'all 0.15s' },
+  btnGlyph: { color: 'var(--teal)', fontSize: 14 },
+
+  pipeline: { display: 'flex', alignItems: 'center', padding: '20px 24px', background: 'var(--surface)', border: '1px solid var(--line)', marginBottom: 16 },
+  stage: { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, padding: '12px 8px', opacity: 0.4, transition: 'opacity 0.3s' },
+  stageActive: { opacity: 1 },
+  stageNum: { fontFamily: 'var(--serif)', fontSize: 12, color: 'var(--dim)', letterSpacing: '0.1em' },
+  stageLabel: { fontSize: 12, letterSpacing: '0.15em', textTransform: 'uppercase' },
+  stageDot: { width: 8, height: 8, borderRadius: '50%', background: 'var(--line2)', marginTop: 4 },
+  stageDotActive: { background: 'var(--teal)', boxShadow: '0 0 12px var(--teal)' },
+  connector: { flex: 0.5, height: 1, background: 'var(--line2)' },
+  connectorActive: { background: 'linear-gradient(90deg, var(--teal), var(--cold), var(--teal))', backgroundSize: '200% 100%', animation: 'flow 2s linear infinite' },
+
+  grid: { display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 16, marginBottom: 16 },
+  panel: { background: 'var(--surface)', border: '1px solid var(--line)', minHeight: 420, display: 'flex', flexDirection: 'column' },
+  panelHead: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 18px', borderBottom: '1px solid var(--line)' },
+  panelCount: { fontSize: 11, color: 'var(--dim)' },
+  feed: { flex: 1, padding: '12px 0', overflowY: 'auto', maxHeight: 420 },
+  feedEmpty: { height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--dim)', gap: 8, padding: 40, textAlign: 'center' },
+  feedEmptyGlyph: { fontSize: 32, color: 'var(--dimmer)', marginBottom: 8 },
+  feedEmptyHint: { fontSize: 11, color: 'var(--dimmer)', maxWidth: 280, lineHeight: 1.5 },
+  evt: { display: 'grid', gridTemplateColumns: '110px 160px 1fr', gap: 12, padding: '6px 18px', fontSize: 11, animation: 'slideIn 0.25s ease-out', borderLeft: '2px solid transparent' },
+  evtTime: { color: 'var(--dim)' },
+  evtType: { color: 'var(--teal)', letterSpacing: '0.05em' },
+  evtPayload: { color: 'var(--ink)', opacity: 0.8, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+
+  record: { padding: 20, flex: 1, overflowY: 'auto' },
+  recScore: { textAlign: 'center', padding: '12px 0 24px', borderBottom: '1px dashed var(--line2)', marginBottom: 18, minHeight: 40 },
+  recScoreNum: { fontFamily: 'var(--serif)', fontSize: 72, fontWeight: 400, color: 'var(--ink)', lineHeight: 1 },
+  recScoreLabel: { fontSize: 10, color: 'var(--dim)', letterSpacing: '0.2em', marginTop: 4 },
+  recFields: { display: 'flex', flexDirection: 'column', gap: 8 },
+  recRow: { display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '4px 0' },
+  recKey: { color: 'var(--dim)', letterSpacing: '0.05em' },
+  recVal: { color: 'var(--ink)', fontWeight: 500, fontFamily: 'var(--sans)' },
+  recReason: { marginTop: 20, padding: 14, background: 'var(--bg)', border: '1px solid var(--line)' },
+  recReasonText: { fontSize: 14, color: 'var(--ink-soft)', lineHeight: 1.6, marginTop: 8, fontFamily: 'var(--serif)', fontStyle: 'italic' },
+
+  tier: { fontSize: 11, letterSpacing: '0.15em', padding: '4px 10px', border: '1px solid currentColor' },
+  tierHot: { color: 'var(--hot)' },
+  tierCold: { color: 'var(--cold)' },
+
+  footer: { display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, fontSize: 10, color: 'var(--dimmer)', letterSpacing: '0.1em', paddingTop: 16, borderTop: '1px solid var(--line)' },
+};
+
+ReactDOM.createRoot(document.getElementById('root')).render(<Dashboard />);
+</script>
+
+<style>
+  #backLink {
+    display: inline-block;
+    margin: 20px 0 -8px; padding: 8px 14px;
+    max-width: 1320px; margin-left: auto; margin-right: auto;
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--dim); text-decoration: none;
+    border: 1px solid var(--line2); border-radius: 999px;
+    background: rgba(11, 26, 44, 0.7);
+    transition: color 0.2s, border-color 0.2s;
+  }
+  #backLinkWrap { max-width: 1320px; margin: 0 auto; padding: 20px 24px 0; }
+  #backLink:hover { color: var(--teal); border-color: var(--teal); }
+  @media (max-width: 760px) {
+    #root [style*="grid-template-columns: 1.4fr"] { grid-template-columns: 1fr !important; }
+  }
+</style>
+</body>
+</html>
