@@ -1018,133 +1018,142 @@
     -webkit-text-stroke: 1px var(--ink);
   }
 
-  /* ========== CASE STUDIES (HORIZONTAL CAROUSEL) ========== */
-  .cases-rail {
-    display: flex; gap: 24px;
-    overflow-x: auto;
-    overflow-y: hidden;
-    padding: 0 var(--gutter) 32px;
-    scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: thin;
-    scrollbar-color: var(--line-strong) transparent;
+  /* ========== THE LEAKS ========== */
+  .leaks-intro {
+    max-width: 640px;
+    color: var(--ink-soft);
+    font-size: 15px;
+    line-height: 1.65;
+    margin: -28px 0 48px;
   }
-  .cases-rail::-webkit-scrollbar { height: 8px; }
-  .cases-rail::-webkit-scrollbar-track { background: transparent; }
-  .cases-rail::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 999px; }
-
-  .case-card {
-    flex: 0 0 min(580px, 80vw);
-    scroll-snap-align: start;
-    background: var(--bg-elev);
+  .leak-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--line);
     border: 1px solid var(--line);
-    border-radius: 12px;
+    border-radius: 4px;
     overflow: hidden;
-    transition: transform 0.3s, box-shadow 0.3s;
   }
-  .case-card:hover { transform: translateY(-4px); box-shadow: 0 24px 50px -20px rgba(0,0,0,0.2); }
-  .case-img {
-    aspect-ratio: 16/10;
-    background: linear-gradient(135deg, var(--navy), #1a3050 60%, #0b1f33);
-    position: relative;
-    overflow: hidden;
-    display: flex; align-items: center; justify-content: center;
+  .leak-card {
+    background: var(--bg);
+    padding: 40px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    transition: background 0.3s;
   }
-  .dark .case-img { background: linear-gradient(135deg, #0b1a2c, #122842 60%, #050d18); }
-  .case-img.alt { background: linear-gradient(135deg, #1f8a8a, #0b1f33 70%); }
-  .case-img.alt2 { background: linear-gradient(135deg, #6fa37a, #1f8a8a 50%, #0b1f33); }
-  .case-stripes {
-    position: absolute; inset: 0;
-    background-image: repeating-linear-gradient(135deg, rgba(245,241,234,0.04) 0 8px, transparent 8px 22px);
-  }
-  .case-mock {
-    position: relative;
-    width: 78%;
-    background: rgba(245,241,234,0.08);
-    border: 1px solid rgba(245,241,234,0.18);
-    border-radius: 6px;
-    padding: 16px;
-    color: #f5f1ea;
+  .leak-card:hover { background: var(--bg-elev); }
+  .leak-num {
     font-family: var(--mono);
-    font-size: 10px;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    color: var(--ink-mute);
   }
-  .case-mock .row {
-    display: flex; justify-content: space-between;
-    padding: 8px 0;
-    border-bottom: 1px solid rgba(245,241,234,0.1);
+  .leak-card h3 {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: 23px;
+    line-height: 1.12;
+    letter-spacing: -0.015em;
+    margin: 0;
   }
-  .case-mock .row:last-child { border-bottom: none; }
-  .case-mock .v { color: var(--teal-soft); font-family: var(--serif); font-size: 16px; }
-
-  .case-meta {
-    padding: 28px;
+  .leak-card p {
+    color: var(--ink-soft);
+    font-size: 14px;
+    line-height: 1.6;
+    margin: 0;
+    flex: 1;
   }
-  .case-tags {
-    display: flex; gap: 6px;
+  .leak-cost {
     font-family: var(--mono);
     font-size: 11px;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--ink-mute);
-    margin-bottom: 16px;
-  }
-  .case-tags span { padding: 4px 10px; border: 1px solid var(--line); border-radius: 999px; }
-  .case-meta h3 {
-    font-family: var(--serif); font-weight: 400;
-    font-size: 26px; line-height: 1.1;
-    letter-spacing: -0.015em;
-    margin: 0 0 12px;
-  }
-  .case-meta p {
-    color: var(--ink-soft);
-    font-size: 14px; line-height: 1.55;
-    margin: 0 0 18px;
-  }
-  .case-stats {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-    padding-top: 18px;
+    letter-spacing: 0.05em;
+    color: var(--teal);
+    padding-top: 14px;
     border-top: 1px solid var(--line);
   }
-  .case-stat {}
-  .case-stat .v {
-    font-family: var(--serif);
-    font-size: 28px;
-    font-weight: 400;
-    line-height: 1;
-    letter-spacing: -0.02em;
-    color: var(--teal);
-  }
-  .case-stat .l {
-    font-family: var(--mono);
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--ink-mute);
-    margin-top: 6px;
-  }
+  @media (max-width: 900px) { .leak-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 600px) { .leak-grid { grid-template-columns: 1fr; } }
 
-  .cases-controls {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 0 var(--gutter);
-    margin-top: 12px;
+  /* ========== ENGAGEMENT STRIP ========== */
+  .engage {
+    margin-top: 72px;
+    padding-top: 56px;
+    border-top: 1px solid var(--line);
+  }
+  .engage-label {
     font-family: var(--mono);
     font-size: 12px;
+    letter-spacing: 0.16em;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
+    color: var(--teal);
+    margin-bottom: 14px;
+  }
+  .engage-head {
+    font-family: var(--serif);
+    font-weight: 300;
+    font-size: clamp(24px, 3vw, 34px);
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    margin: 0 0 40px;
+    max-width: 580px;
+  }
+  .engage-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    overflow: hidden;
+    counter-reset: estep;
+  }
+  .engage-step {
+    background: var(--bg);
+    padding: 32px 26px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    counter-increment: estep;
+  }
+  .engage-step .k {
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
     color: var(--ink-mute);
   }
-  .case-arrows { display: flex; gap: 8px; }
-  .case-arrow {
-    width: 44px; height: 44px;
-    border-radius: 50%;
-    border: 1px solid var(--line-strong);
-    background: transparent;
-    display: flex; align-items: center; justify-content: center;
-    transition: all 0.2s;
+  .engage-step .k::before {
+    content: counter(estep, decimal-leading-zero) " · ";
+    color: var(--teal);
   }
-  .case-arrow:hover { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .engage-step h4 {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: 20px;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+    margin: 0;
+  }
+  .engage-step p {
+    color: var(--ink-soft);
+    font-size: 13px;
+    line-height: 1.55;
+    margin: 0;
+  }
+  .engage-note {
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--ink-mute);
+    margin-top: 22px;
+  }
+  .engage-note a { color: var(--teal); border-bottom: 1px solid currentColor; }
+  @media (max-width: 900px) { .engage-strip { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 520px) { .engage-strip { grid-template-columns: 1fr; } }
 
   /* ========== ABOUT ========== */
   .about-grid {
@@ -1368,7 +1377,7 @@
     <a href="#services">Services</a>
     <a href="#process">Process</a>
     <a href="/dashboard">Demos</a>
-    <a href="#work">Work</a>
+    <a href="#work">Leaks</a>
     <a href="#about">About</a>
   </div>
   <div class="nav-right">
@@ -1887,89 +1896,81 @@
     </div>
   </section>
 
-  <!-- CASE STUDIES -->
+  <!-- WHERE SCHOOLS LEAK MONEY -->
   <section class="bleed tight" id="work">
     <div class="container">
       <div class="section-head reveal">
-        <div class="section-num">04 / Case Studies</div>
-        <h2 class="section-title">Real schools. <em>Real results.</em></h2>
+        <div class="section-num">04 / The Leaks</div>
+        <h2 class="section-title">Where schools <em>leak money.</em></h2>
       </div>
-    </div>
 
-    <div class="cases-rail reveal" id="casesRail">
-      <article class="case-card">
-        <div class="case-img">
-          <div class="case-stripes"></div>
-          <div class="case-mock">
-            <div class="row"><span>Cost / Enrollment</span><span class="v">$142</span></div>
-            <div class="row"><span>ROAS</span><span class="v">5.1x</span></div>
-            <div class="row"><span>Response time</span><span class="v">12s</span></div>
-          </div>
-        </div>
-        <div class="case-meta">
-          <div class="case-tags"><span>ESL</span><span>Lakeview</span><span>2025</span></div>
-          <h3>Lakeview Language Institute</h3>
-          <p>Cut cost-per-enrollment in half by replacing 6-hour email response time with a 12-second AI front desk. Spanish + Mandarin ready.</p>
-          <div class="case-stats">
-            <div class="case-stat"><div class="v">−51%</div><div class="l">cost / enrollment</div></div>
-            <div class="case-stat"><div class="v">2.8×</div><div class="l">tour bookings</div></div>
-            <div class="case-stat"><div class="v">12s</div><div class="l">avg response</div></div>
-          </div>
-        </div>
-      </article>
+      <p class="leaks-intro reveal">Six gaps show up in almost every training center I look at. None of them are dramatic on their own — together they're usually the difference between a marketing budget that pays for itself and one that doesn't. The audit puts a real dollar figure on each.</p>
 
-      <article class="case-card">
-        <div class="case-img alt">
-          <div class="case-stripes"></div>
-          <div class="case-mock">
-            <div class="row"><span>Monthly enrollments</span><span class="v">+87%</span></div>
-            <div class="row"><span>Ad waste</span><span class="v">−$41k/yr</span></div>
-            <div class="row"><span>Programs tracked</span><span class="v">9</span></div>
-          </div>
+      <div class="leak-grid reveal">
+        <div class="leak-card">
+          <div class="leak-num">L.01</div>
+          <h3>Slow speed-to-lead</h3>
+          <p>A prospective student asks about your CNA program at 9pm. The first real reply goes out the next afternoon — by then they've already booked a tour somewhere else.</p>
+          <div class="leak-cost">Most web leads go cold inside an hour</div>
         </div>
-        <div class="case-meta">
-          <div class="case-tags"><span>Medical</span><span>West Loop</span><span>2025</span></div>
-          <h3>West Loop Medical Training</h3>
-          <p>Joined six ad platforms to their billing system. Found $41k/yr being spent on a TikTok campaign that produced exactly zero enrolled students.</p>
-          <div class="case-stats">
-            <div class="case-stat"><div class="v">+87%</div><div class="l">enrollments</div></div>
-            <div class="case-stat"><div class="v">$41k</div><div class="l">ad waste cut</div></div>
-            <div class="case-stat"><div class="v">9</div><div class="l">programs tracked</div></div>
-          </div>
+        <div class="leak-card">
+          <div class="leak-num">L.02</div>
+          <h3>Ad spend you can't trace to tuition</h3>
+          <p>Google, Meta and TikTok each report their own "conversions" — none of them know who actually enrolled and paid. Budget drifts to the channel with the best cost-per-lead and the worst cost-per-student.</p>
+          <div class="leak-cost">Often a third of budget on channels that enroll no one</div>
         </div>
-      </article>
+        <div class="leak-card">
+          <div class="leak-num">L.03</div>
+          <h3>Tour no-shows with no recovery</h3>
+          <p>Someone books a campus tour and doesn't come. No call, no reschedule text, no second attempt — the lead just ends there.</p>
+          <div class="leak-cost">20–50% of booked tours never show</div>
+        </div>
+        <div class="leak-card">
+          <div class="leak-num">L.04</div>
+          <h3>Non-English inquiries that fall through</h3>
+          <p>A Spanish or Mandarin voicemail lands after hours. Nobody on the night desk can answer it, so it waits — and often disappears.</p>
+          <div class="leak-cost">Common where a third of demand isn't English-first</div>
+        </div>
+        <div class="leak-card">
+          <div class="leak-num">L.05</div>
+          <h3>Follow-up that depends on memory</h3>
+          <p>The five-touch nurture sequence lives in a doc. Whether it actually happens depends on how busy admissions was that week.</p>
+          <div class="leak-cost">Most schools stop after one or two touches</div>
+        </div>
+        <div class="leak-card">
+          <div class="leak-num">L.06</div>
+          <h3>Re-enrollment left on the table</h3>
+          <p>Graduates who finish one program and would happily take the next never get asked. Past students are the cheapest enrollments you'll ever get, and nobody's working the list.</p>
+          <div class="leak-cost">Rarely a system — usually nothing at all</div>
+        </div>
+      </div>
 
-      <article class="case-card">
-        <div class="case-img alt2">
-          <div class="case-stripes"></div>
-          <div class="case-mock">
-            <div class="row"><span>No-show rate</span><span class="v">−68%</span></div>
-            <div class="row"><span>Calls handled / mo</span><span class="v">2,340</span></div>
-            <div class="row"><span>Languages</span><span class="v">EN · ES</span></div>
+      <div class="engage reveal">
+        <div class="engage-label">How I work</div>
+        <h3 class="engage-head">A fixed-fee audit first. You only build once you've seen the numbers.</h3>
+        <div class="engage-strip">
+          <div class="engage-step">
+            <div class="k">Audit</div>
+            <h4>Find the leaks</h4>
+            <p>About two weeks in your funnel, ad accounts and CRM. You get a written report with a dollar figure on each leak. No commitment to build.</p>
+          </div>
+          <div class="engage-step">
+            <div class="k">Build</div>
+            <h4>Ship the fix</h4>
+            <p>Three to four weeks. Working chat and voice agents, dashboards and follow-up — wired into the tools you already run on.</p>
+          </div>
+          <div class="engage-step">
+            <div class="k">Handoff</div>
+            <h4>Your team owns it</h4>
+            <p>Training so admissions can edit prompts and read the dashboards without me. Everything documented, everything reversible.</p>
+          </div>
+          <div class="engage-step">
+            <div class="k">Monitor</div>
+            <h4>Keep it honest</h4>
+            <p>Monthly. I watch the automations, tune against the numbers, and send a weekly ROI email so the payback stays visible.</p>
           </div>
         </div>
-        <div class="case-meta">
-          <div class="case-tags"><span>Phlebotomy</span><span>Pilsen</span><span>2026</span></div>
-          <h3>Pilsen Allied Health Academy</h3>
-          <p>A bilingual voice agent now books 80% of tours and recovers no-shows automatically. Director got her Saturday mornings back.</p>
-          <div class="case-stats">
-            <div class="case-stat"><div class="v">−68%</div><div class="l">no-shows</div></div>
-            <div class="case-stat"><div class="v">2,340</div><div class="l">calls / mo</div></div>
-            <div class="case-stat"><div class="v">EN·ES</div><div class="l">bilingual</div></div>
-          </div>
-        </div>
-      </article>
-    </div>
-
-    <div class="cases-controls">
-      <span><span id="caseIdx">01</span> / 03</span>
-      <div class="case-arrows">
-        <button class="case-arrow" id="caseLeft" aria-label="Previous">
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 3L5 8L10 13"/></svg>
-        </button>
-        <button class="case-arrow" id="caseRight" aria-label="Next">
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 3L11 8L6 13"/></svg>
-        </button>
+        <div class="engage-note">The audit is where the leaks above turn into real numbers — <a href="#contact">book a call</a> to start one.</div>
       </div>
     </div>
   </section>
@@ -1992,7 +1993,7 @@
         </div>
         <div class="about-prose">
           <p>I made an impact(then it clicked)! After introducing two straightforward automations, an ad budget tracker and 24/7 follow up automation, my manager saw the difference it made right away. Student Visa changes made spending money on one platform not good, while having a follow-up agent respond immediately to students in other countries turned gold. Timing was the key.</p>
-          <p>This all happened organically for me since the new skills I was learning at that time are now becoming valuable to any business -- Today, I am still a language instructor Downtown, but slowly I will partner and grow with training centers to monitor their automations and make upgrades when needed.</p>
+          <p>This all happened organically for me since the new skills I was learning at that time are now becoming valuable to any business -- Today, I am still a language instructor Downtown, but slowly my company looks to partner and grow with training centers to monitor their automations and make upgrades when needed.</p>
           <p>I work hands-on with a small number of ESL and medical training centers across Chicago —quality over quantity— building practical automated systems that pay for themselves inside 60 days.</p>
 
           <div class="about-meta">
@@ -2251,26 +2252,6 @@ class TextScramble {
   }, 3200);
 })();
 
-/* ========== CASE STUDIES CAROUSEL ========== */
-(function() {
-  const rail = document.getElementById('casesRail');
-  const left = document.getElementById('caseLeft');
-  const right = document.getElementById('caseRight');
-  const idxEl = document.getElementById('caseIdx');
-  if (!rail) return;
-  const cards = rail.querySelectorAll('.case-card');
-  function step(dir) {
-    const w = cards[0].getBoundingClientRect().width + 24;
-    rail.scrollBy({ left: w * dir, behavior: 'smooth' });
-  }
-  left.addEventListener('click', () => step(-1));
-  right.addEventListener('click', () => step(1));
-  rail.addEventListener('scroll', () => {
-    const w = cards[0].getBoundingClientRect().width + 24;
-    const i = Math.round(rail.scrollLeft / w) + 1;
-    idxEl.textContent = String(Math.min(cards.length, Math.max(1, i))).padStart(2, '0');
-  });
-})();
 
 /* ========== MAGNETIC BUTTON ========== */
 (function() {
